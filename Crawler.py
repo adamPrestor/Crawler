@@ -9,6 +9,7 @@ import Database as db
 
 INIT_FRONTIER = [
     "https://www.google.com",
+    "https://www.youtube.com",
     "https://www.gov.si/",
     "https://evem.gov.si/",
     "https://e-uprava.gov.si/",
@@ -19,7 +20,6 @@ INIT_FRONTIER = [
 def crawl():
     # TODO: do the thread locking when implementing multithread crawlers
     db.get_frontier()
-    pass
 
 
 if __name__ == '__main__':
@@ -32,9 +32,11 @@ if __name__ == '__main__':
     rp = urllib.robotparser.RobotFileParser(robots)
     rp.read()
 
-    print(rp)
-    print(rp.request_rate('fri-ieps-TEST'))
-    print(rp.crawl_delay('fri-ieps-TEST'))
+    db.add_to_frontier(INIT_FRONTIER[0])
+    db.add_to_frontier(INIT_FRONTIER[1])
+
+    db.add_link(INIT_FRONTIER[0], INIT_FRONTIER[1])
+    db.get_frontier()
 
     request = urllib.request.Request(
         INIT_FRONTIER[0],
@@ -43,10 +45,4 @@ if __name__ == '__main__':
 
     with urllib.request.urlopen(request) as response:
         html = response.read().decode("utf-8")
-        print(f"Retrieved headers: \n'{response.getheaders()}'")
-        print(f"Retrieved header: \n'{response.getheader('Content-Type')}'")
-        print(f"Retrieved status: \n'{response.status}'")
-
-        db.get_frontier()
-
         # print(f"Retrieved Web content: \n\n'\n{html}\n'")

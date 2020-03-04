@@ -47,6 +47,6 @@ if __name__ == '__main__':
         print(f"Retrieved header: \n'{response.getheader('Content-Type')}'")
         print(f"Retrieved status: \n'{response.status}'")
 
-        db.add_to_frontier(INIT_FRONTIER[0], html, response.status)
+        db.get_frontier()
 
         # print(f"Retrieved Web content: \n\n'\n{html}\n'")

@@ -1,3 +1,4 @@
-db_username = 'adam'
-db_password = 'test'
+db_username = 'user'
+db_password = 'SecretPassword'
 db_host = 'localhost'
+db_database = 'postgres'

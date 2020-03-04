@@ -18,15 +18,27 @@ class URLParser():
 
         self.driver = webdriver.Chrome(settings.DRIVER_LOCATION, options=chrome_options)
 
+    def _find_links_and_data(self):
+        a_elements = self.driver.find_elements_by_tag_name('a')
+        links = [el.get_attribute('href') for el in a_elements]
+
+        # TODO: filter links with pdf, doc, etc.
+
+        img_elements = self.driver.find_elements_by_tag_name('img')
+        images = [el.get_attribute('src') for el in img_elements]
+
+        return links, images
+
     def parse_url(self, url):
         self.driver.get(url)
 
         # Timeout needed for Web page to render (read more about it)
         time.sleep(self.page_render_time)
 
-        return self.driver.page_source
+        # Find links and images
+        links, images = self._find_links_and_data()
 
-        # TODO: search document for links, parse content
+        return self.driver.page_source
 
         # TODO: return links, content
 

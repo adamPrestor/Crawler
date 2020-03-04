@@ -1,30 +1,41 @@
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+import settings
 
-WEB_DRIVER_LOCATION = "/Users/adam/"
-TIMEOUT = 5
+class URLParser():
+    def __init__(self, page_render_time=5, headless=True):
 
-chrome_options = Options()
-# If you comment the following line, a browser will show ...
-chrome_options.add_argument("--headless")
+        self.page_render_time = page_render_time
 
-#Adding a specific user agent
-chrome_options.add_argument("user-agent=fri-ieps-TEST")
+        chrome_options = Options()
 
-print(f"Retrieving web page URL '{WEB_PAGE_ADDRESS}'")
-driver = webdriver.Chrome(WEB_DRIVER_LOCATION, options=chrome_options)
-driver.get(WEB_PAGE_ADDRESS)
+        # Use headless version of the browser
+        chrome_options.headless = headless
 
-# Timeout needed for Web page to render (read more about it)
-time.sleep(TIMEOUT)
+        # Adding a specific user agent
+        chrome_options.add_argument("user-agent=fri-ieps-group-7")
 
-html = driver.page_source
+        self.driver = webdriver.Chrome(settings.DRIVER_LOCATION, options=chrome_options)
 
-print(f"Retrieved Web content (truncated to first 900 chars): \n\n'\n{html[:900]}\n'\n")
+    def parse_url(self, url):
+        self.driver.get(url)
 
-page_msg = driver.find_element_by_class_name("spotmsg")
+        # Timeout needed for Web page to render (read more about it)
+        time.sleep(self.page_render_time)
 
-print(f"Web page message: '{page_msg.text}'")
+        return self.driver.page_source
 
-driver.close()
+        # TODO: search document for links, parse content
+
+        # TODO: return links, content
+
+    def close(self):
+        self.driver.close()
+
+    # Methods to enable use as context manager
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()

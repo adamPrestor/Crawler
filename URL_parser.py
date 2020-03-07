@@ -1,3 +1,4 @@
+import re
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -18,14 +19,39 @@ class URLParser():
 
         self.driver = webdriver.Chrome(settings.DRIVER_LOCATION, options=chrome_options)
 
-    def _find_links_and_data(self):
-        a_elements = self.driver.find_elements_by_tag_name('a')
-        links = [el.get_attribute('href') for el in a_elements]
+        # Onclick regex
+        self.onclick_regex = re.compile(r'location(?:\.href)*\s*=\s*["\'](https?://[^\s/$.?#].[^\s"\']*)["\']')
 
+    def _find_links_and_data(self):
+        # <a href=...> elements
+        a_elements = self.driver.find_elements_by_tag_name('a[href]')
+        links = {el.get_attribute('href') for el in a_elements}
+
+        # Filter non links
+        links = {l for l in links if l.startswith('http')}
+
+        # <* onclick=...> elements
+        onclick_elements = self.driver.find_elements_by_css_selector('*[onclick]')
+        onclicks = [el.get_attribute('onclick') for el in onclick_elements]
+
+        # Find links in onclick code
+        onclick_links = set()
+        for onclick in onclicks:
+            search_obj = self.onclick_regex.search(onclick)
+            if search_obj is not None:
+                url = search_obj.groups()[0]
+                onclick_links.add(url)
+
+        all_links = links | onclick_links
+
+        # TODO: link canonicalization
         # TODO: filter links with pdf, doc, etc.
 
         img_elements = self.driver.find_elements_by_tag_name('img')
-        images = [el.get_attribute('src') for el in img_elements]
+        images = {el.get_attribute('src') for el in img_elements}
+
+        # Filter non links (images)
+        images = {i for i in images if i.startswith('http')}
 
         return links, images
 

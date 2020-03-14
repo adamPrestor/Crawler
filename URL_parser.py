@@ -20,7 +20,7 @@ class URLParser():
         self.driver = webdriver.Chrome(settings.DRIVER_LOCATION, options=chrome_options)
 
         # Onclick regex
-        self.onclick_regex = re.compile(r'location(?:\.href)*\s*=\s*["\'](https?://[^\s/$.?#].[^\s"\']*)["\']')
+        self.onclick_regex = re.compile(r'location(?:\.href)*\s*=\s*["\']([^\s"\']*)["\']')
 
     def _find_links_and_data(self):
         # <a href=...> elements

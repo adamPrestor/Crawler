@@ -1,11 +1,19 @@
 import re
 import time
+from datetime import datetime
+from collections import namedtuple
+import urllib
+
+import urltools
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-import settings
-import urllib
-import urltools
 
+import settings
+
+
+
+ParserResult = namedtuple('ParserResult', ['html_content', 'type', 'access_time',
+                                           'image_links', 'binary_links', 'normal_links'])
 
 def is_image(url):
     """ Check if url is an image (from url string) """
@@ -94,7 +102,7 @@ class URLParser():
         all_links = {canonicalize_url(link) for link in all_links}
 
         # Find images
-        img_elements = self.driver.find_elements_by_tag_name('img')
+        img_elements = self.driver.find_elements_by_tag_name('img[src]')
         images = {el.get_attribute('src') for el in img_elements}
 
         # Filter non links (images) and canonicalize
@@ -106,17 +114,23 @@ class URLParser():
         return other_links, image_links, binary_links
 
     def parse_url(self, url):
+        # TODO: send HEAD request with other library to get status code and page type
+
         self.driver.get(url)
+
+        access_time = datetime.now()
 
         # Timeout needed for Web page to render (read more about it)
         time.sleep(self.page_render_time)
 
+        # Content
+        html_content = self.driver.page_source
+
         # Find links and images
         normal_links, images, binary_files = self._find_links_and_data()
 
-        return self.driver.page_source
-
-        # TODO: return links, content
+        return ParserResult(html_content=html_content, type=None, access_time=access_time,
+                            image_links=images, binary_links=binary_files, normal_links=normal_links)
 
     def close(self):
         self.driver.quit()

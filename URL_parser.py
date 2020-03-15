@@ -3,6 +3,38 @@ import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import settings
+import urllib
+
+
+def is_image(url):
+    """ Check if url is an image (from url string) """
+
+    ext = ['.jpg', '.jpeg', '.bmp', '.png', '.svg', '.gif', '.tiff', '.tif']
+    return any(url.lower().endswith(e) for e in ext)
+
+def is_binary(url):
+    """ Check if url is a binary page (from url string) """
+
+    ext = ['.pdf', '.doc', '.docx', '.ppt', '.pptx']
+    return any(url.lower().endswith(e) for e in ext)
+
+def group_split(seq, *filter_fns):
+    """ Splits arr into multiple groups based on filter functions. """
+
+    filter_groups = [set() for fn in filter_fns]
+    rest_group = set()
+    for el in seq:
+        # Add element to first matching group
+        for fn, group in zip(filter_fns, filter_groups):
+            if fn(el):
+                group.add(el)
+                break
+        # If no matching groups, add it to the rest group
+        else:
+            rest_group.add(el)
+
+    groups = tuple([*filter_groups, rest_group])
+    return groups
 
 class URLParser():
     def __init__(self, page_render_time=5, headless=True):
@@ -55,10 +87,12 @@ class URLParser():
         # Filter non links (images)
         images = {i for i in images if i.startswith('http')}
 
-        # TODO: link canonicalization
-        # TODO: filter links with pdf, doc, etc.
+        image_links, binary_links, other_links = group_split(all_links, is_image, is_binary)
+        image_links = images | image_links
 
-        return links, images
+        # TODO: link canonicalization
+
+        return other_links, image_links, binary_links
 
     def parse_url(self, url):
         self.driver.get(url)

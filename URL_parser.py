@@ -1,30 +1,143 @@
+import re
 import time
+from datetime import datetime
+from collections import namedtuple
+import urllib
+
+import urltools
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-WEB_DRIVER_LOCATION = "/Users/adam/"
-TIMEOUT = 5
+import settings
 
-chrome_options = Options()
-# If you comment the following line, a browser will show ...
-chrome_options.add_argument("--headless")
 
-#Adding a specific user agent
-chrome_options.add_argument("user-agent=fri-ieps-TEST")
 
-print(f"Retrieving web page URL '{WEB_PAGE_ADDRESS}'")
-driver = webdriver.Chrome(WEB_DRIVER_LOCATION, options=chrome_options)
-driver.get(WEB_PAGE_ADDRESS)
+ParserResult = namedtuple('ParserResult', ['html_content', 'type', 'access_time',
+                                           'image_links', 'binary_links', 'normal_links'])
 
-# Timeout needed for Web page to render (read more about it)
-time.sleep(TIMEOUT)
+def is_image(url):
+    """ Check if url is an image (from url string) """
 
-html = driver.page_source
+    ext = ['.jpg', '.jpeg', '.bmp', '.png', '.svg', '.gif', '.tiff', '.tif']
+    return any(url.lower().endswith(e) for e in ext)
 
-print(f"Retrieved Web content (truncated to first 900 chars): \n\n'\n{html[:900]}\n'\n")
+def is_binary(url):
+    """ Check if url is a binary page (from url string) """
 
-page_msg = driver.find_element_by_class_name("spotmsg")
+    ext = ['.pdf', '.doc', '.docx', '.ppt', '.pptx']
+    return any(url.lower().endswith(e) for e in ext)
 
-print(f"Web page message: '{page_msg.text}'")
+def group_split(seq, *filter_fns):
+    """ Splits arr into multiple groups based on filter functions. """
 
-driver.close()
+    filter_groups = [set() for fn in filter_fns]
+    rest_group = set()
+    for el in seq:
+        # Add element to first matching group
+        for fn, group in zip(filter_fns, filter_groups):
+            if fn(el):
+                group.add(el)
+                break
+        # If no matching groups, add it to the rest group
+        else:
+            rest_group.add(el)
+
+    groups = tuple([*filter_groups, rest_group])
+    return groups
+
+def canonicalize_url(url):
+    # Canonicalize URL
+    url = urltools.normalize(url)
+
+    # Remove fragment
+    url = urllib.parse.urldefrag(url).url
+
+    return url
+
+class URLParser():
+    def __init__(self, page_render_time=5, headless=True):
+
+        self.page_render_time = page_render_time
+
+        chrome_options = Options()
+
+        # Use headless version of the browser
+        chrome_options.headless = headless
+
+        # Adding a specific user agent
+        chrome_options.add_argument("user-agent=fri-ieps-group-7")
+
+        self.driver = webdriver.Chrome(settings.DRIVER_LOCATION, options=chrome_options)
+
+        # Onclick regex
+        self.onclick_regex = re.compile(r'location(?:\.href)*\s*=\s*["\']([^\s"\']*)["\']')
+
+    def _find_links_and_data(self):
+        # <a href=...> elements
+        a_elements = self.driver.find_elements_by_tag_name('a[href]')
+        links = {el.get_attribute('href') for el in a_elements}
+
+        # Filter non links
+        links = {l for l in links if l.startswith('http')}
+
+        # <* onclick=...> elements
+        onclick_elements = self.driver.find_elements_by_css_selector('*[onclick]')
+        onclicks = [el.get_attribute('onclick') for el in onclick_elements]
+
+        # Find links in onclick code
+        onclick_links = set()
+        for onclick in onclicks:
+            search_obj = self.onclick_regex.search(onclick)
+            if search_obj is not None:
+                url = search_obj.groups()[0]
+                onclick_links.add(url)
+
+        all_links = links | onclick_links
+
+        # Convert relative paths to absolute
+        base_url = self.driver.current_url
+        all_links = {urllib.parse.urljoin(base_url, url) for url in all_links}
+
+        # Canonicalize all_links
+        all_links = {canonicalize_url(link) for link in all_links}
+
+        # Find images
+        img_elements = self.driver.find_elements_by_tag_name('img[src]')
+        images = {el.get_attribute('src') for el in img_elements}
+
+        # Filter non links (images) and canonicalize
+        images = {canonicalize_url(i) for i in images if i.startswith('http')}
+
+        image_links, binary_links, other_links = group_split(all_links, is_image, is_binary)
+        image_links = images | image_links
+
+        return other_links, image_links, binary_links
+
+    def parse_url(self, url):
+        # TODO: send HEAD request with other library to get status code and page type
+
+        self.driver.get(url)
+
+        access_time = datetime.now()
+
+        # Timeout needed for Web page to render (read more about it)
+        time.sleep(self.page_render_time)
+
+        # Content
+        html_content = self.driver.page_source
+
+        # Find links and images
+        normal_links, images, binary_files = self._find_links_and_data()
+
+        return ParserResult(html_content=html_content, type=None, access_time=access_time,
+                            image_links=images, binary_links=binary_files, normal_links=normal_links)
+
+    def close(self):
+        self.driver.quit()
+
+    # Methods to enable use as context manager
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()

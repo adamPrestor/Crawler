@@ -44,14 +44,19 @@ class URLParser():
 
         all_links = links | onclick_links
 
-        # TODO: link canonicalization
-        # TODO: filter links with pdf, doc, etc.
+        # Convert relative paths to absolute
+        base_url = self.driver.current_url
+        all_links = {urllib.parse.urljoin(base_url, url) for url in all_links}
 
+        # Find images
         img_elements = self.driver.find_elements_by_tag_name('img')
         images = {el.get_attribute('src') for el in img_elements}
 
         # Filter non links (images)
         images = {i for i in images if i.startswith('http')}
+
+        # TODO: link canonicalization
+        # TODO: filter links with pdf, doc, etc.
 
         return links, images
 

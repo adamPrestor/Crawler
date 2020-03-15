@@ -4,6 +4,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import settings
 import urllib
+import urltools
 
 
 def is_image(url):
@@ -35,6 +36,15 @@ def group_split(seq, *filter_fns):
 
     groups = tuple([*filter_groups, rest_group])
     return groups
+
+def canonicalize_url(url):
+    # Canonicalize URL
+    url = urltools.normalize(url)
+
+    # Remove fragment
+    url = urllib.parse.urldefrag(url).url
+
+    return url
 
 class URLParser():
     def __init__(self, page_render_time=5, headless=True):
@@ -80,17 +90,18 @@ class URLParser():
         base_url = self.driver.current_url
         all_links = {urllib.parse.urljoin(base_url, url) for url in all_links}
 
+        # Canonicalize all_links
+        all_links = {canonicalize_url(link) for link in all_links}
+
         # Find images
         img_elements = self.driver.find_elements_by_tag_name('img')
         images = {el.get_attribute('src') for el in img_elements}
 
-        # Filter non links (images)
-        images = {i for i in images if i.startswith('http')}
+        # Filter non links (images) and canonicalize
+        images = {canonicalize_url(i) for i in images if i.startswith('http')}
 
         image_links, binary_links, other_links = group_split(all_links, is_image, is_binary)
         image_links = images | image_links
-
-        # TODO: link canonicalization
 
         return other_links, image_links, binary_links
 
@@ -101,7 +112,7 @@ class URLParser():
         time.sleep(self.page_render_time)
 
         # Find links and images
-        links, images = self._find_links_and_data()
+        normal_links, images, binary_files = self._find_links_and_data()
 
         return self.driver.page_source
 

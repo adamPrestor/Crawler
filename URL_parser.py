@@ -108,7 +108,7 @@ class URLParser():
         # TODO: return links, content
 
     def close(self):
-        self.driver.close()
+        self.driver.quit()
 
     # Methods to enable use as context manager
     def __enter__(self):

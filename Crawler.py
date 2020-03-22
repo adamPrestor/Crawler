@@ -3,7 +3,7 @@ import urllib.request
 import urllib.robotparser
 import urllib.parse
 from urllib.parse import urlparse
-from multiprocessing import Queue
+from multiprocessing import Queue, Lock
 
 import Database as db
 from worker import URLWorker
@@ -19,32 +19,30 @@ INIT_FRONTIER = [
 
 
 def crawl():
-
-    frontier_queue = Queue()
-    response_queue = Queue()
-
-    for i in range(NUM_WORKERS):
-        URLWorker(frontier_queue, response_queue).start()
+    lock = Lock()
 
     # Add initial frontier urls
     for url in INIT_FRONTIER:
-        frontier_queue.put(url)
+        db.add_to_frontier(url)
 
-    # Processing loop (recieve urls, add to frontier)
-    while True:
-        try:
-            links = response_queue.get(timeout=10)
-
-            for url in links:
-                # TODO: check if already visited, etc.
-                frontier_queue.put(url)
-
-        except queue.Empty:
-            break
-
-    # Send exit signal to workers
     for i in range(NUM_WORKERS):
-        frontier_queue.put(None)
+        URLWorker(lock, i).start()
+
+    # # Processing loop (recieve urls, add to frontier)
+    # while True:
+    #     try:
+    #         links = response_queue.get(timeout=10)
+    #
+    #         for url in links:
+    #             # TODO: check if already visited, etc.
+    #             frontier_queue.put(url)
+    #
+    #     except Queue.Empty:
+    #         break
+    #
+    # # Send exit signal to workers
+    # for i in range(NUM_WORKERS):
+    #     frontier_queue.put(None)
 
 
 if __name__ == '__main__':

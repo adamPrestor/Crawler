@@ -9,6 +9,14 @@ import settings
 lock = threading.Lock()
 
 
+def autoescape_html(html):
+    return str(html).replace("\"", "\\\"").replace("\'", "\\\'")
+
+
+def autoescape_html_udo(html):
+    return str(html).replace("\\\"", "\"").replace("\\\'", "\'")
+
+
 def add_to_frontier(url):
     """
     Push function. Will not add url to frontier, if it already exists in the base.
@@ -44,6 +52,8 @@ def get_frontier():
     if not front:
         # frontier is empty
         print("The frontier is empty")
+        cur.close()
+        conn.close()
         return None
     else:
         # pop the first element out of the frontier
@@ -60,7 +70,7 @@ def get_frontier():
         return front
 
 
-def page_content(html, status, page_type, url):
+def page_content(html, status, page_type, at, url):
     """
 
     :param html:
@@ -73,9 +83,9 @@ def page_content(html, status, page_type, url):
     conn.autocommit = True
 
     cur = conn.cursor()
-    cur.execute(f"UPDATE crawldb.page "
-                f"SET page_type_code={page_type},html_content={html},http_status_code={status},accessed_time={datetime.now()}"
-                f"WHERE url={url}")
+    cur.execute(rf"""UPDATE crawldb.page
+                     SET page_type_code='HTML',html_content='{autoescape_html('unicode_escape')}',http_status_code={status},accessed_time='{at}'
+                     WHERE url='{url}'""")
 
     cur.close()
     conn.close()
@@ -94,7 +104,7 @@ def add_page_data(page, data, data_type):
     conn.autocommit = True
 
     cur = conn.cursor()
-    cur.execute(f"INSERT INTO crawldb.page_data (page_id, data_type_code, data) VALUES ({page},{data_type},{data})")
+    cur.execute(f"INSERT INTO crawldb.page_data (page_id, data_type_code, data) VALUES ({page},'{data_type}','{data}')")
 
     cur.close()
     conn.close()
@@ -157,6 +167,24 @@ def add_domain(domain_name, robots, site_map):
     cur.close()
     conn.close()
     raise NotImplementedError
+
+
+def get_domain_last_visit(domain_id):
+    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password,
+                            dbname=settings.db_database)
+    conn.autocommit = True
+
+    cur = conn.cursor()
+    cur.execute(f"""SELECT accessed_time
+                    FROM crawldb.page
+                    WHERE page_type_code='HTML' and accessed_time IS NOT NULL
+                    ORDER BY accessed_time DESC
+                    LIMIT 1""")
+    front = cur.fetchone()
+
+    cur.close()
+    conn.close()
+    return front
 
 
 def add_link(url_from, url_to):

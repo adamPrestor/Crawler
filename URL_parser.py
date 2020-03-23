@@ -4,6 +4,7 @@ from datetime import datetime
 from collections import namedtuple
 import urllib
 
+import requests
 import urltools
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -44,6 +45,34 @@ def group_split(seq, *filter_fns):
 
     groups = tuple([*filter_groups, rest_group])
     return groups
+
+def fetch_robots(url):
+    """ Reads robots file (if present) for the domain of the given url. If the robots.txt file is missing an empty string is returned. """
+
+    parsed = urllib.parse.urlparse(url)
+    robots_url = urllib.parse.urlunparse((parsed.scheme, parsed.netloc, 'robots.txt', '', '', ''))
+
+    res = requests.get(robots_url)
+    robots_data = ''
+    if res.status_code == 200:
+        robots_data = res.content.decode('utf-8')
+
+    return robots_data
+
+def get_robots_parser(data):
+    """ Gets robots parser from robots.txt data. """
+
+    parser = urllib.robotparser.RobotFileParser()
+    parser.parse(data.splitlines())
+
+    return parser
+
+def get_domain_name(url):
+    """ Return the domain of the page. """
+
+    parsed = urllib.parse.urlparse(url)
+    domain = parsed.netloc
+    return domain
 
 def canonicalize_url(url):
     # Canonicalize URL

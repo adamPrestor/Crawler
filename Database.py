@@ -4,6 +4,8 @@ import psycopg2
 import psycopg2.errors
 from datetime import datetime
 
+from URL_parser import get_domain_name, get_robots_parser, fetch_robots
+
 import settings
 
 lock = threading.Lock()
@@ -23,6 +25,16 @@ def add_to_frontier(url):
     :param url: URL to the page of interest.
     :return:
     """
+
+    domain_name = get_domain_name(url)
+    domain = get_domain(domain_name)
+    if domain is None:
+        robots_data = fetch_robots(url)
+        add_domain(domain_name, robots_data, '')
+        domain = get_domain(domain_name)
+
+    print('DOMAIN', domain)
+
     conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
     conn.autocommit = True
 
@@ -140,7 +152,7 @@ def get_domain(domain):
     conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
 
     cur = conn.cursor()
-    cur.execute("SELECT * FROM crawldb.site WHERE domain=%s", domain)
+    cur.execute(f"SELECT id, domain, robots_content FROM crawldb.site WHERE domain='{domain}'")
 
     front = cur.fetchone()
 
@@ -162,11 +174,10 @@ def add_domain(domain_name, robots, site_map):
     conn.autocommit = True
 
     cur = conn.cursor()
-    cur.execute(f"INSERT INTO crawldb.site ('domain', robots_content, sitemap_content) VALUES ({domain_name},{robots},{site_map})")
+    cur.execute(f"INSERT INTO crawldb.site (domain, robots_content, sitemap_content) VALUES ('{domain_name}','{robots}','{site_map}')")
 
     cur.close()
     conn.close()
-    raise NotImplementedError
 
 
 def get_domain_last_visit(domain_id):

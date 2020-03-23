@@ -11,7 +11,7 @@ from selenium.webdriver.chrome.options import Options
 
 import settings
 
-
+USER_AGENT = '*'
 
 ParserResult = namedtuple('ParserResult', ['html_content', 'access_time',
                                            'image_links', 'binary_links', 'normal_links'])
@@ -52,10 +52,13 @@ def fetch_robots(url):
     parsed = urllib.parse.urlparse(url)
     robots_url = urllib.parse.urlunparse((parsed.scheme, parsed.netloc, 'robots.txt', '', '', ''))
 
-    res = requests.get(robots_url)
     robots_data = ''
-    if res.status_code == 200:
-        robots_data = res.content.decode('utf-8')
+    try:
+        res = requests.get(robots_url)
+        if res.status_code == 200:
+            robots_data = res.content.decode('utf-8')
+    except requests.RequestException:
+        print(f'WARNING: Could not read robots file: {robots_url}')
 
     return robots_data
 

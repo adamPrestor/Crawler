@@ -4,7 +4,7 @@ import psycopg2
 import psycopg2.errors
 from datetime import datetime
 
-from URL_parser import get_domain_name, get_robots_parser, fetch_robots
+from URL_parser import get_domain_name, get_robots_parser, fetch_robots, USER_AGENT
 
 import settings
 
@@ -26,14 +26,34 @@ def add_to_frontier(url):
     :return:
     """
 
+    # Get domain data. If not existing, add a new domain.
     domain_name = get_domain_name(url)
     domain = get_domain(domain_name)
+
+    # Get robots content from database or from url
     if domain is None:
         robots_data = fetch_robots(url)
-        add_domain(domain_name, robots_data, '')
-        domain = get_domain(domain_name)
+    else:
+        robots_data = domain[2]
 
-    print('DOMAIN', domain)
+    # Parse robots.txt
+    robots_parser = get_robots_parser(robots_data)
+    delay = robots_parser.crawl_delay(USER_AGENT)
+
+    # Add to dataset if missing
+    if domain is None:
+        # TODO: add delay to domain entry
+        add_domain(domain_name, robots_data, '')
+
+
+    if delay is not None:
+        print('DELAY:', delay)
+
+    # Check if URL can be crawled
+    if not robots_parser.can_fetch(USER_AGENT, url):
+        print("FORBIDDEN:", url)
+        return
+
 
     conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
     conn.autocommit = True

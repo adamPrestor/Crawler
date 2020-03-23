@@ -12,7 +12,7 @@ import settings
 
 
 
-ParserResult = namedtuple('ParserResult', ['html_content', 'type', 'access_time',
+ParserResult = namedtuple('ParserResult', ['html_content', 'access_time',
                                            'image_links', 'binary_links', 'normal_links'])
 
 def is_image(url):
@@ -129,7 +129,7 @@ class URLParser():
         # Find links and images
         normal_links, images, binary_files = self._find_links_and_data()
 
-        return ParserResult(html_content=html_content, type=None, access_time=access_time,
+        return ParserResult(html_content=html_content, access_time=access_time,
                             image_links=images, binary_links=binary_files, normal_links=normal_links)
 
     def close(self):

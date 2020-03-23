@@ -70,13 +70,13 @@ def get_frontier():
         return front
 
 
-def page_content(html, status, page_type, at, url):
+def page_content(page_id, html, status, page_type, at):
     """
 
+    :param page_id:
     :param html:
     :param status:
     :param page_type:
-    :param url:
     :return:
     """
     conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
@@ -84,8 +84,8 @@ def page_content(html, status, page_type, at, url):
 
     cur = conn.cursor()
     cur.execute(rf"""UPDATE crawldb.page
-                     SET page_type_code='HTML',html_content='{autoescape_html('unicode_escape')}',http_status_code={status},accessed_time='{at}'
-                     WHERE url='{url}'""")
+                     SET page_type_code='{page_type}',html_content='{autoescape_html('unicode_escape')}',http_status_code={status},accessed_time='{at}'
+                     WHERE id='{page_id}'""")
 
     cur.close()
     conn.close()

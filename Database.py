@@ -4,6 +4,7 @@ import psycopg2
 import psycopg2.errors
 from datetime import datetime, timedelta
 import hashlib
+import logging
 
 from URL_parser import get_domain_name, get_robots_parser, fetch_robots, USER_AGENT, DEFAULT_CRAWL_DELAY
 
@@ -61,13 +62,12 @@ def add_to_frontier(url):
     delay = robots_parser.crawl_delay(USER_AGENT)
 
     if delay is not None:
-        print('DELAY:', delay)
+        logging.debug(f'DELAY: {delay}')
 
     # Check if URL can be crawled
     if not robots_parser.can_fetch(url, USER_AGENT):
-        print("FORBIDDEN:", url)
+        logging.debug(f"FORBIDDEN: {url}")
         return False
-
 
     conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
     conn.autocommit = True
@@ -77,8 +77,7 @@ def add_to_frontier(url):
         cur.execute("INSERT INTO crawldb.page (site_id, page_type_code, url)"
                     f"VALUES ({site_id},'FRONTIER','{url}')")
     except psycopg2.errors.UniqueViolation:
-        # TODO: fail silently
-        print(f"Site '{url}' is already in the database.")
+        logging.warning(f"Site '{url}' is already in the database.")
 
     cur.close()
     conn.close()
@@ -103,8 +102,14 @@ def get_frontier():
     # get out of the frontier
     front = cur.fetchone()
     if not front:
+        # check if frontier is empty
+        cur.execute("SELECT id FROM crawldb.page WHERE page.page_type_code='FRONTIER'")
+        if cur.fetchone() is not None:
+            # frontier exists but not available
+            cur.close()
+            conn.close()
+            raise FrontierNotAvailableException
         # frontier is empty
-        print("The frontier is empty")
         cur.close()
         conn.close()
         raise EmptyFrontierException
@@ -182,7 +187,7 @@ def page_content(page_id, url, html, status, page_type, at):
         cur.execute(sql, (page_type, html, md5_string, status, at, page_id))
     else:
         # Mark as duplicate
-        print("DUPLICATE:", url, duplicate_url)
+        logging.warning(f"DUPLICATE: {url}, {duplicate_url}")
         cur.execute(rf"""UPDATE crawldb.page
                         SET page_type_code='DUPLICATE',http_status_code={status},accessed_time='{at}'
                         WHERE id='{page_id}'""")
@@ -210,13 +215,14 @@ def add_page_data(page, data, data_type):
     conn.close()
 
 
-def add_image(page, filename, content_type, data):
+def add_image(page, filename, content_type, data, at):
     """
 
     :param page:
     :param filename:
     :param content_type:
     :param data:
+    :param at:
     :return:
     """
     conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password,
@@ -224,12 +230,13 @@ def add_image(page, filename, content_type, data):
     conn.autocommit = True
 
     cur = conn.cursor()
-    query = ("INSERT INTO crawldb.image (page_id, filename, content_type, data, accessed_time) "
-             f"VALUES ({page},{filename},{content_type},{data},{datetime.now()})")
-    cur.execute()
+    query = f"""INSERT INTO crawldb.image (page_id, filename, content_type, data, accessed_time)
+                VALUES (%s,%s,%s,%s,%s)"""
+    cur.execute(query, (page, filename, content_type, data, at))
 
     cur.close()
     conn.close()
+
 
 def update_domain(page_id, access_time):
     """ Updates domain's next allowed time. """
@@ -247,7 +254,7 @@ def update_domain(page_id, access_time):
     # Add delay to access time
     next_allowed_time = access_time + timedelta(seconds=crawl_delay)
 
-    print("DELAY", site_id, access_time, next_allowed_time)
+    logging.info(f"DELAY {site_id} {access_time} {next_allowed_time}")
     query = ("UPDATE crawldb.site "
              f"SET next_allowed_time='{next_allowed_time}' "
              f"WHERE id={site_id}")
@@ -337,7 +344,7 @@ def add_link(url_from, url_to):
                     f"id2(id) as (SELECT id FROM crawldb.page WHERE url='{url_to}')"
                     f"INSERT INTO crawldb.link (from_page, to_page) VALUES ((SELECT id from id1), (SELECT id from id2))")
     except psycopg2.errors.UniqueViolation:
-        print(f"Link already exists: {url_from} -> {url_to}")
+        logging.warning(f"Link already exists: {url_from} -> {url_to}")
 
     cur.close()
     conn.close()

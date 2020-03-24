@@ -1,3 +1,4 @@
+import logging
 import urllib
 import urllib.request
 import urllib.robotparser
@@ -32,4 +33,6 @@ def crawl():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(filename='crawler.log', level=logging.NOTSET, format='%(levelname)s:%(asctime)s: %(message)s')
+    logging.critical("Crawler started.")
     crawl()

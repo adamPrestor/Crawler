@@ -3,6 +3,7 @@ import time
 import requests
 from datetime import datetime
 import traceback
+import logging
 
 from URL_parser import URLParser
 from multiprocessing import Process
@@ -10,6 +11,7 @@ from multiprocessing import Process
 import Database as db
 
 url_re = re.compile(r'\.gov.si?/')
+
 
 class URLWorker(Process):
     """ Worker class. Retrieves and parses url and adds data to the dataset. """
@@ -24,7 +26,6 @@ class URLWorker(Process):
         while True:
             with URLParser() as parser:
                 # Reads urls from queue until it receives the sentinel value of None
-                print('I am here, doing nothing: ' + str(self.id))
                 try:
                     # get the frontier out of the DB - FIFO style
                     self.lock.acquire()
@@ -33,9 +34,7 @@ class URLWorker(Process):
 
                     ran_out = False
 
-                    print(str(self.id) + ',' + url)
-                    # TODO: check the domain - urlparse etc.
-                    # TODO: check for the delay on the domain - db.get_domain_last_visit
+                    logging.debug(f"{str(self.id)} :-> {url}")
 
                     # Head request to get status code and page type
                     head = requests.head(url, allow_redirects=True)
@@ -54,12 +53,12 @@ class URLWorker(Process):
                             # add all the binary content type to link to the page
                             for binary in res.binary_links:
                                 dtype = binary.split('.')[-1].upper()
-                                # TODO: maybe get data type with HEAD request
                                 db.add_page_data(page=page_id, data=binary, data_type=dtype)
 
                             # add image data from the page
                             for image in res.image_links:
-                                pass
+                                dtype = image.split('.')[-1].upper()
+                                db.add_image(page=page_id, filename=image, content_type=dtype, data=None,at=res.access_time)
 
                             # Parse links and add to frontier
                             for link in res.normal_links:
@@ -67,10 +66,10 @@ class URLWorker(Process):
                                     if db.add_to_frontier(link):
                                         db.add_link(url, link)
                                 else:
-                                    print("Out of scope url: " + link)
+                                    logging.debug("Out of scope url: " + link)
 
                         else:
-                            print("NON HTML", url, status_code, content_type)
+                            logging.debug(f"NON HTML: {url}  {status_code} {content_type}")
                             # Save page as binary
                             db.page_content_binary(page_id=page_id, status=status_code, at=datetime.now())
 
@@ -91,5 +90,5 @@ class URLWorker(Process):
                     print("Error caught: " + str(e))
 
                     traceback.print_exc()
-                    self.lock.release()
                     return
+        logging.critical(f"Worker {self.id} has finished it's task. ---------------")

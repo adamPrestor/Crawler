@@ -102,6 +102,9 @@ def get_frontier():
         cur.close()
         conn.close()
 
+        # Update domain
+        update_domain(id, datetime.now())
+
         return front
 
 def _page_exists(md5_string, conn):
@@ -131,9 +134,6 @@ def page_content_binary(page_id, status, at):
 
     cur.close()
     conn.close()
-
-    # Update domain allowed time
-    update_domain(page_id, at)
 
 
 def page_content(page_id, url, html, status, page_type, at):
@@ -170,9 +170,6 @@ def page_content(page_id, url, html, status, page_type, at):
 
     cur.close()
     conn.close()
-
-    # Update domain allowed time
-    update_domain(page_id, at)
 
 
 def add_page_data(page, data, data_type):
@@ -219,6 +216,7 @@ def update_domain(page_id, access_time):
     """ Updates domain's next allowed time. """
 
     conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
+    conn.autocommit = True
 
     cur = conn.cursor()
     query = ("SELECT site.id, site.crawl_delay FROM crawldb.page "
@@ -226,17 +224,15 @@ def update_domain(page_id, access_time):
              f"WHERE page.id={page_id}")
     cur.execute(query)
     site_id, crawl_delay = cur.fetchone()
-    cur.close()
 
     # Add delay to access time
     next_allowed_time = access_time + timedelta(seconds=crawl_delay)
 
     print("DELAY", site_id, access_time, next_allowed_time)
-
-    cur = conn.cursor()
     query = ("UPDATE crawldb.site "
              f"SET next_allowed_time='{next_allowed_time}' "
-             f"WHERE id={site_id} ")
+             f"WHERE id={site_id}")
+
     cur.execute(query)
     cur.close()
 

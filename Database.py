@@ -20,6 +20,22 @@ class FrontierNotAvailableException(Exception):
     pass
 
 
+def init_frontier():
+    """ Init frontier on start. Add non-processed pages back to frontier. """
+
+    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
+    conn.autocommit = True
+
+    cur = conn.cursor()
+
+    query = ("UPDATE crawldb.page "
+             "SET page_type_code='FRONTIER' "
+             "WHERE page_type_code IS NULL")
+    cur.execute(query)
+
+    cur.close()
+    conn.close()
+
 def add_to_frontier(url):
     """
     Push function. Will not add url to frontier, if it already exists in the base.

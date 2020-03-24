@@ -21,6 +21,8 @@ INIT_FRONTIER = [
 def crawl():
     lock = Lock()
 
+    db.init_frontier()
+
     # Add initial frontier urls
     for url in INIT_FRONTIER:
         db.add_to_frontier(url)

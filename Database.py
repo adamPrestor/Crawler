@@ -75,7 +75,12 @@ def get_frontier():
     conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
 
     cur = conn.cursor()
-    cur.execute("SELECT id, url FROM crawldb.page WHERE page_type_code='FRONTIER' ORDER BY id")
+    query = ("SELECT page.id, page.url FROM crawldb.page "
+             "INNER JOIN crawldb.site ON page.site_id=site.id "
+             "WHERE page.page_type_code='FRONTIER' "
+             f"AND site.next_allowed_time <= '{datetime.now()}' "
+             "ORDER BY page.id")
+    cur.execute(query)
 
     # get out of the frontier
     front = cur.fetchone()
@@ -90,7 +95,7 @@ def get_frontier():
         id = front[0]
 
         # delete the page from teh frontier
-        cur.execute(f"UPDATE crawldb.page SET page_type_code='HTML' WHERE id={id}")
+        cur.execute(f"UPDATE crawldb.page SET page_type_code=NULL WHERE id={id}")
 
         conn.commit()
 
@@ -225,6 +230,8 @@ def update_domain(page_id, access_time):
 
     # Add delay to access time
     next_allowed_time = access_time + timedelta(seconds=crawl_delay)
+
+    print("DELAY", site_id, access_time, next_allowed_time)
 
     cur = conn.cursor()
     query = ("UPDATE crawldb.site "

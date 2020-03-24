@@ -2,6 +2,7 @@ import re
 import time
 import requests
 from datetime import datetime
+import traceback
 
 from URL_parser import URLParser
 from multiprocessing import Process
@@ -76,6 +77,7 @@ class URLWorker(Process):
                 except Exception as e:
                     # TODO: handle the errors of empty frontier or waiting for the site to be visited
                     print("Error caught: " + str(e))
+                    traceback.print_exc()
                     self.lock.release()
                     return
 

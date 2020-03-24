@@ -2,10 +2,10 @@ import concurrent.futures
 import threading
 import psycopg2
 import psycopg2.errors
-from datetime import datetime
+from datetime import datetime, timedelta
 import hashlib
 
-from URL_parser import get_domain_name, get_robots_parser, fetch_robots, USER_AGENT
+from URL_parser import get_domain_name, get_robots_parser, fetch_robots, USER_AGENT, DEFAULT_CRAWL_DELAY
 
 import settings
 
@@ -127,6 +127,9 @@ def page_content_binary(page_id, status, at):
     cur.close()
     conn.close()
 
+    # Update domain allowed time
+    update_domain(page_id, at)
+
 
 def page_content(page_id, url, html, status, page_type, at):
     """ Updates page content
@@ -163,6 +166,9 @@ def page_content(page_id, url, html, status, page_type, at):
     cur.close()
     conn.close()
 
+    # Update domain allowed time
+    update_domain(page_id, at)
+
 
 def add_page_data(page, data, data_type):
     """
@@ -197,12 +203,37 @@ def add_image(page, filename, content_type, data):
     conn.autocommit = True
 
     cur = conn.cursor()
-    cur.execute(f"INSERT INTO crawldb.image (page_id, filename, content_type, data, accessed_time) VALUES "
-                f"({page},{filename},{content_type},{data},{datetime.now()})")
+    query = ("INSERT INTO crawldb.image (page_id, filename, content_type, data, accessed_time) "
+             f"VALUES ({page},{filename},{content_type},{data},{datetime.now()})")
+    cur.execute()
 
     cur.close()
     conn.close()
 
+def update_domain(page_id, access_time):
+    """ Updates domain's next allowed time. """
+
+    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
+
+    cur = conn.cursor()
+    query = ("SELECT site.id, site.crawl_delay FROM crawldb.page "
+             "INNER JOIN crawldb.site ON page.site_id=site.id "
+             f"WHERE page.id={page_id}")
+    cur.execute(query)
+    site_id, crawl_delay = cur.fetchone()
+    cur.close()
+
+    # Add delay to access time
+    next_allowed_time = access_time + timedelta(seconds=crawl_delay)
+
+    cur = conn.cursor()
+    query = ("UPDATE crawldb.site "
+             f"SET next_allowed_time='{next_allowed_time}' "
+             f"WHERE id={site_id} ")
+    cur.execute(query)
+    cur.close()
+
+    conn.close()
 
 def get_domain(domain):
     """
@@ -231,11 +262,20 @@ def add_domain(domain_name, robots, site_map):
     :param site_map:
     :return:
     """
+
+    # Get crawl delay
+    robots_parser = get_robots_parser(robots)
+    crawl_delay = robots_parser.crawl_delay(USER_AGENT)
+    if crawl_delay is None:
+        crawl_delay = DEFAULT_CRAWL_DELAY
+
     conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
     conn.autocommit = True
 
     cur = conn.cursor()
-    cur.execute(f"INSERT INTO crawldb.site (domain, robots_content, sitemap_content) VALUES ('{domain_name}','{robots}','{site_map}')")
+    query = ("INSERT INTO crawldb.site (domain, robots_content, sitemap_content, crawl_delay, next_allowed_time) "
+             f"VALUES ('{domain_name}','{robots}','{site_map}', {crawl_delay}, '{datetime.now()}')")
+    cur.execute(query)
 
     cur.close()
     conn.close()

@@ -12,6 +12,7 @@ from selenium.webdriver.chrome.options import Options
 import settings
 
 USER_AGENT = '*'
+DEFAULT_CRAWL_DELAY = 5
 
 ParserResult = namedtuple('ParserResult', ['html_content', 'access_time',
                                            'image_links', 'binary_links', 'normal_links'])

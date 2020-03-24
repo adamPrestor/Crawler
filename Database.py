@@ -6,7 +6,8 @@ from datetime import datetime, timedelta
 import hashlib
 import logging
 
-from URL_parser import get_domain_name, get_robots_parser, fetch_robots, USER_AGENT, DEFAULT_CRAWL_DELAY
+from URL_parser import get_domain_name, get_robots_parser, fetch_robots, fetch_sitemap
+from URL_parser import USER_AGENT, DEFAULT_CRAWL_DELAY
 
 import settings
 
@@ -51,7 +52,7 @@ def add_to_frontier(url):
     # Get robots content from database or from url
     if domain is None:
         robots_data = fetch_robots(url)
-        add_domain(domain_name, robots_data, '')
+        add_domain(domain_name, robots_data)
         domain = get_domain(domain_name)
 
     site_id = domain[0]
@@ -283,7 +284,7 @@ def get_domain(domain):
     return front
 
 
-def add_domain(domain_name, robots, site_map):
+def add_domain(domain_name, robots):
     """
 
     :param domain_name:
@@ -298,13 +299,18 @@ def add_domain(domain_name, robots, site_map):
     if crawl_delay is None:
         crawl_delay = DEFAULT_CRAWL_DELAY
 
+    sitemaps = list(robots_parser.sitemaps)
+    sitemap_content = ''
+    if len(sitemaps) > 0:
+        sitemap_content = fetch_sitemap(sitemaps[0])
+
     conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
     conn.autocommit = True
 
     cur = conn.cursor()
     query = ("INSERT INTO crawldb.site (domain, robots_content, sitemap_content, crawl_delay, next_allowed_time) "
-             f"VALUES ('{domain_name}','{robots}','{site_map}', {crawl_delay}, '{datetime.now()}')")
-    cur.execute(query)
+             f"VALUES (%s, %s, %s, %s, %s)")
+    cur.execute(query, (domain_name, robots, sitemap_content, int(crawl_delay), datetime.now()))
 
     cur.close()
     conn.close()

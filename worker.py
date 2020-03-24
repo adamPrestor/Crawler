@@ -34,7 +34,8 @@ class URLWorker(Process):
 
                     ran_out = False
 
-                    logging.debug(f"{str(self.id)} :-> {url}")
+                    logging.debug(f"[{self.id}] Processing page: {url}")
+                    print(f"[{self.id}] Processing page: {url}")
 
                     # Head request to get status code and page type
                     head = requests.head(url, allow_redirects=True)
@@ -87,8 +88,7 @@ class URLWorker(Process):
                         return
                     ran_out = True
                 except Exception as e:
-                    print("Error caught: " + str(e))
-
-                    traceback.print_exc()
+                    logging.warning("Error caught: " + str(e), exc_info=True)
                     return
+
         logging.critical(f"Worker {self.id} has finished it's task. ---------------")

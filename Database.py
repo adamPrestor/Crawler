@@ -78,7 +78,7 @@ def add_to_frontier(url):
         cur.execute("INSERT INTO crawldb.page (site_id, page_type_code, url)"
                     f"VALUES ({site_id},'FRONTIER','{url}')")
     except psycopg2.errors.UniqueViolation:
-        logging.warning(f"Site '{url}' is already in the database.")
+        logging.info(f"Site '{url}' is already in the database.")
 
     cur.close()
     conn.close()

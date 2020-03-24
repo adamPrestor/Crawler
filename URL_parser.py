@@ -4,6 +4,7 @@ from datetime import datetime
 from collections import namedtuple
 import urllib
 from protego import Protego
+import logging
 
 import requests
 import urltools
@@ -57,7 +58,7 @@ def fetch_sitemap(url):
         if res.status_code == 200:
             sitemap_data = res.content.decode('utf-8')
     except requests.RequestException:
-        print(f'WARNING: Could not read sitemap: {sitemap_data}')
+        logging.warning(f'Could not read sitemap: {sitemap_data}')
 
     return sitemap_data
 
@@ -73,7 +74,7 @@ def fetch_robots(url):
         if res.status_code == 200:
             robots_data = res.content.decode('utf-8')
     except requests.RequestException:
-        print(f'WARNING: Could not read robots file: {robots_url}')
+        logging.warning(f'Could not read robots file: {robots_url}')
 
     return robots_data
 

@@ -64,9 +64,9 @@ def add_to_frontier(url):
         print('DELAY:', delay)
 
     # Check if URL can be crawled
-    if not robots_parser.can_fetch(USER_AGENT, url):
+    if not robots_parser.can_fetch(url, USER_AGENT):
         print("FORBIDDEN:", url)
-        return
+        return False
 
 
     conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
@@ -83,6 +83,7 @@ def add_to_frontier(url):
     cur.close()
     conn.close()
 
+    return True
 
 def get_frontier():
     """

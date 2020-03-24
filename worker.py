@@ -64,8 +64,8 @@ class URLWorker(Process):
                             # Parse links and add to frontier
                             for link in res.normal_links:
                                 if url_re.search(link):
-                                    db.add_to_frontier(link)
-                                    db.add_link(url, link)
+                                    if db.add_to_frontier(link):
+                                        db.add_link(url, link)
                                 else:
                                     print("Out of scope url: " + link)
 

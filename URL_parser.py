@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 from collections import namedtuple
 import urllib
+from protego import Protego
 
 import requests
 import urltools
@@ -66,10 +67,9 @@ def fetch_robots(url):
 def get_robots_parser(data):
     """ Gets robots parser from robots.txt data. """
 
-    parser = urllib.robotparser.RobotFileParser()
-    parser.parse(data.splitlines())
+    robots = Protego.parse(data)
 
-    return parser
+    return robots
 
 def get_domain_name(url):
     """ Return the domain of the page. """

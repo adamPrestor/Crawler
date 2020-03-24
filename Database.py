@@ -9,12 +9,12 @@ import settings
 lock = threading.Lock()
 
 
-def autoescape_html(html):
-    return str(html).replace("\"", "\\\"").replace("\'", "\\\'")
+class EmptyFrontierException(Exception):
+    pass
 
 
-def autoescape_html_udo(html):
-    return str(html).replace("\\\"", "\"").replace("\\\'", "\'")
+class FrontierNotAvailableException(Exception):
+    pass
 
 
 def add_to_frontier(url):
@@ -54,7 +54,7 @@ def get_frontier():
         print("The frontier is empty")
         cur.close()
         conn.close()
-        return None
+        raise EmptyFrontierException
     else:
         # pop the first element out of the frontier
         id = front[0]
@@ -83,9 +83,12 @@ def page_content(html, status, page_type, at, url):
     conn.autocommit = True
 
     cur = conn.cursor()
-    cur.execute(rf"""UPDATE crawldb.page
-                     SET page_type_code='HTML',html_content='{autoescape_html('unicode_escape')}',http_status_code={status},accessed_time='{at}'
-                     WHERE url='{url}'""")
+    sql = """UPDATE crawldb.page
+             SET page_type_code=%s,html_content=%s,http_status_code=%s,accessed_time=%s
+             WHERE url=%s"""
+    cur.execute(sql, ('HTML', html, status, at, url))
+
+    # TODO: adjust next_accessed_time according to it's
 
     cur.close()
     conn.close()
@@ -177,7 +180,7 @@ def get_domain_last_visit(domain_id):
     cur = conn.cursor()
     cur.execute(f"""SELECT accessed_time
                     FROM crawldb.page
-                    WHERE page_type_code='HTML' and accessed_time IS NOT NULL
+                    WHERE site_id={domain_id} and accessed_time IS NOT NULL
                     ORDER BY accessed_time DESC
                     LIMIT 1""")
     front = cur.fetchone()

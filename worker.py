@@ -17,6 +17,7 @@ class URLWorker(Process):
         self.id = id
 
     def run(self):
+        ran_out = False
         while True:
             with URLParser() as parser:
                 # Reads urls from queue until it receives the sentinel value of None
@@ -26,6 +27,8 @@ class URLWorker(Process):
                     self.lock.acquire()
                     page_id, url = db.get_frontier()
                     self.lock.release()
+
+                    ran_out = False
 
                     print(str(self.id) + ',' + url)
                     # TODO: check the domain - urlparse etc.
@@ -48,6 +51,7 @@ class URLWorker(Process):
 
                     # add image data from the page
                     for image in getattr(res, 'image_links'):
+                        # TODO
                         pass
 
                     # go through links
@@ -58,10 +62,14 @@ class URLWorker(Process):
                         else:
                             print("Out of scope url: " + link)
 
-                except Exception as e:
-                    # TODO: handle the errors of empty frontier or waiting for the site to be visited
-                    print("Error caught: " + str(e))
+                except db.FrontierNotAvailableException:
                     self.lock.release()
-                    return
-
-            time.sleep(3)
+                    time.sleep(2)
+                except db.EmptyFrontierException:
+                    self.lock.release()
+                    time.sleep(10)
+                    if ran_out:
+                        return
+                    ran_out = True
+                except Exception as e:
+                    print("Error caught: " + str(e))

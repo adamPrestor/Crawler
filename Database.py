@@ -103,7 +103,7 @@ def get_frontier():
         cur.close()
         conn.close()
 
-        # Update domain
+        # Update domain (set next access time)
         update_domain(id, datetime.now())
 
         return front
@@ -160,10 +160,9 @@ def page_content(page_id, url, html, status, page_type, at):
     if not exists:
         # Not a duplicate
         sql = """UPDATE crawldb.page
-                     SET page_type_code=%s,html_content=%s,http_status_code=%s,accessed_time=%s
-                     WHERE url=%s"""
-        cur.execute(sql, ('HTML', html, status, at, url))
-        # TODO: adjust next_accessed_time according to it's
+                 SET page_type_code=%s,html_content=%s,html_content_hash=%s,http_status_code=%s,accessed_time=%s
+                 WHERE id=%s"""
+        cur.execute(sql, (page_type, html, md5_string, status, at, page_id))
     else:
         # Mark as duplicate
         print("DUPLICATE:", url, duplicate_url)

@@ -29,8 +29,6 @@ class URLWorker(Process):
                     page_id, url = db.get_frontier()
                     self.lock.release()
 
-                    print(str(self.id) + ',' + url)
-                    # TODO: check the domain - urlparse etc.
                     # TODO: check for the delay on the domain - db.get_domain_last_visit
 
                     # Head request to get status code and page type
@@ -44,7 +42,7 @@ class URLWorker(Process):
                             res = parser.parse_url(url)
 
                             # Write parsed data to dataset (update page)
-                            db.page_content(page_id=page_id, html=res.html_content, page_type='HTML',
+                            db.page_content(page_id=page_id, url=url, html=res.html_content, page_type='HTML',
                                             status=status_code, at=res.access_time)
 
                             # add all the binary content type to link to the page
@@ -68,8 +66,7 @@ class URLWorker(Process):
                         else:
                             print("NON HTML", url, status_code, content_type)
                             # Save page as binary
-                            db.page_content(page_id=page_id, html='', page_type='BINARY',
-                                            status=status_code, at=datetime.now())
+                            db.page_content_binary(page_id=page_id, status=status_code, at=datetime.now())
 
                     else:
                         # TODO: what to do when hitting error page or non html page

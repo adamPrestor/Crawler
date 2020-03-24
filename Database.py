@@ -3,6 +3,7 @@ import threading
 import psycopg2
 import psycopg2.errors
 from datetime import datetime
+import hashlib
 
 from URL_parser import get_domain_name, get_robots_parser, fetch_robots, USER_AGENT
 
@@ -101,9 +102,37 @@ def get_frontier():
 
         return front
 
+def _page_exists(md5_string, conn):
+    """ Check if a page with given HTML already exists in the dataset. """
 
-def page_content(page_id, html, status, page_type, at):
-    """
+    cur = conn.cursor()
+
+    cur.execute(rf"""SELECT url FROM crawldb.page WHERE html_content_hash='{md5_string}'""")
+    front = cur.fetchone()
+
+    cur.close()
+
+    exists = front is not None
+    url = front
+    return exists, url
+
+def page_content_binary(page_id, status, at):
+    """ Updates page content (for binary files) """
+
+    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
+    conn.autocommit = True
+
+    cur = conn.cursor()
+    cur.execute(rf"""UPDATE crawldb.page
+                    SET page_type_code='BINARY',http_status_code={status},accessed_time='{at}'
+                    WHERE id='{page_id}'""")
+
+    cur.close()
+    conn.close()
+
+
+def page_content(page_id, url, html, status, page_type, at):
+    """ Updates page content
 
     :param page_id:
     :param html:
@@ -111,13 +140,28 @@ def page_content(page_id, html, status, page_type, at):
     :param page_type:
     :return:
     """
+
+    # TODO: locality hash instead
+    # Compute hash
+    md5_string = hashlib.md5(html.encode('utf-8')).hexdigest()
+
     conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
     conn.autocommit = True
 
+    exists, duplicate_url = _page_exists(md5_string, conn)
+
     cur = conn.cursor()
-    cur.execute(rf"""UPDATE crawldb.page
-                     SET page_type_code='{page_type}',html_content='{autoescape_html('unicode_escape')}',http_status_code={status},accessed_time='{at}'
-                     WHERE id='{page_id}'""")
+    if not exists:
+        # Not a duplicate
+        cur.execute(rf"""UPDATE crawldb.page
+                        SET page_type_code='{page_type}',html_content='{autoescape_html('unicode_escape')}',html_content_hash='{md5_string}',http_status_code={status},accessed_time='{at}'
+                        WHERE id='{page_id}'""")
+    else:
+        # Mark as duplicate
+        print("DUPLICATE:", url, duplicate_url)
+        cur.execute(rf"""UPDATE crawldb.page
+                        SET page_type_code='DUPLICATE',http_status_code={status},accessed_time='{at}'
+                        WHERE id='{page_id}'""")
 
     cur.close()
     conn.close()

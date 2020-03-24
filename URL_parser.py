@@ -11,7 +11,7 @@ from selenium.webdriver.chrome.options import Options
 
 import settings
 
-USER_AGENT = '*'
+USER_AGENT = 'fri-ieps-group-7'
 DEFAULT_CRAWL_DELAY = 5
 
 ParserResult = namedtuple('ParserResult', ['html_content', 'access_time',
@@ -98,7 +98,7 @@ class URLParser():
         chrome_options.headless = headless
 
         # Adding a specific user agent
-        chrome_options.add_argument("user-agent=fri-ieps-group-7")
+        chrome_options.add_argument(f"user-agent={USER_AGENT}")
 
         self.driver = webdriver.Chrome(settings.DRIVER_LOCATION, options=chrome_options)
 

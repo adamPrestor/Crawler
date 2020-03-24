@@ -4,15 +4,17 @@ from datetime import datetime
 from collections import namedtuple
 import urllib
 
+import requests
 import urltools
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
 import settings
 
+USER_AGENT = '*'
+DEFAULT_CRAWL_DELAY = 5
 
-
-ParserResult = namedtuple('ParserResult', ['html_content', 'type', 'access_time',
+ParserResult = namedtuple('ParserResult', ['html_content', 'access_time',
                                            'image_links', 'binary_links', 'normal_links'])
 
 def is_image(url):
@@ -44,6 +46,37 @@ def group_split(seq, *filter_fns):
 
     groups = tuple([*filter_groups, rest_group])
     return groups
+
+def fetch_robots(url):
+    """ Reads robots file (if present) for the domain of the given url. If the robots.txt file is missing an empty string is returned. """
+
+    parsed = urllib.parse.urlparse(url)
+    robots_url = urllib.parse.urlunparse((parsed.scheme, parsed.netloc, 'robots.txt', '', '', ''))
+
+    robots_data = ''
+    try:
+        res = requests.get(robots_url)
+        if res.status_code == 200:
+            robots_data = res.content.decode('utf-8')
+    except requests.RequestException:
+        print(f'WARNING: Could not read robots file: {robots_url}')
+
+    return robots_data
+
+def get_robots_parser(data):
+    """ Gets robots parser from robots.txt data. """
+
+    parser = urllib.robotparser.RobotFileParser()
+    parser.parse(data.splitlines())
+
+    return parser
+
+def get_domain_name(url):
+    """ Return the domain of the page. """
+
+    parsed = urllib.parse.urlparse(url)
+    domain = parsed.netloc
+    return domain
 
 def canonicalize_url(url):
     # Canonicalize URL
@@ -129,7 +162,7 @@ class URLParser():
         # Find links and images
         normal_links, images, binary_files = self._find_links_and_data()
 
-        return ParserResult(html_content=html_content, type=None, access_time=access_time,
+        return ParserResult(html_content=html_content, access_time=access_time,
                             image_links=images, binary_links=binary_files, normal_links=normal_links)
 
     def close(self):

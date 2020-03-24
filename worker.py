@@ -1,5 +1,8 @@
 import re
 import time
+import requests
+from datetime import datetime
+import traceback
 
 from URL_parser import URLParser
 from multiprocessing import Process
@@ -34,33 +37,46 @@ class URLWorker(Process):
                     # TODO: check the domain - urlparse etc.
                     # TODO: check for the delay on the domain - db.get_domain_last_visit
 
-                    res = parser.parse_url(url)
+                    # Head request to get status code and page type
+                    head = requests.head(url, allow_redirects=True)
+                    status_code = head.status_code
 
-                    # change the content of the page
-                    # TODO: check the status of the returned url request
-                    # TODO: add status to write into the database
-                    # TODO: also the type of the page - in db function
-                    db.page_content(html=getattr(res, 'html_content'), page_type=getattr(res, 'type'),
-                                    url=url, status=200, at=getattr(res, 'access_time'))
+                    if status_code < 400:
+                        content_type = head.headers['content-type']
+                        if content_type.startswith('text/html'):
+                            # If page is HTML then parse it
+                            res = parser.parse_url(url)
 
-                    # add all the binary content type to link to the page
-                    for binary in getattr(res, 'binary_links'):
-                        dtype = binary.split('.')[-1].upper()
-                        print(dtype)
-                        db.add_page_data(page=page_id, data=binary, data_type=dtype)
+                            # Write parsed data to dataset (update page)
+                            db.page_content(page_id=page_id, url=url, html=res.html_content, page_type='HTML',
+                                            status=status_code, at=res.access_time)
 
-                    # add image data from the page
-                    for image in getattr(res, 'image_links'):
-                        # TODO
-                        pass
+                            # add all the binary content type to link to the page
+                            for binary in res.binary_links:
+                                dtype = binary.split('.')[-1].upper()
+                                # TODO: maybe get data type with HEAD request
+                                db.add_page_data(page=page_id, data=binary, data_type=dtype)
 
-                    # go through links
-                    for link in getattr(res, 'normal_links'):
-                        if url_re.search(link):
-                            db.add_to_frontier(link)
-                            db.add_link(url, link)
+                            # add image data from the page
+                            for image in res.image_links:
+                                pass
+
+                            # Parse links and add to frontier
+                            for link in res.normal_links:
+                                if url_re.search(link):
+                                    db.add_to_frontier(link)
+                                    db.add_link(url, link)
+                                else:
+                                    print("Out of scope url: " + link)
+
                         else:
-                            print("Out of scope url: " + link)
+                            print("NON HTML", url, status_code, content_type)
+                            # Save page as binary
+                            db.page_content_binary(page_id=page_id, status=status_code, at=datetime.now())
+
+                    else:
+                        # TODO: what to do when hitting error page or non html page
+                        pass
 
                 except db.FrontierNotAvailableException:
                     self.lock.release()
@@ -73,3 +89,7 @@ class URLWorker(Process):
                     ran_out = True
                 except Exception as e:
                     print("Error caught: " + str(e))
+
+                    traceback.print_exc()
+                    self.lock.release()
+                    return

@@ -34,18 +34,15 @@ def add_to_frontier(url):
     # Get robots content from database or from url
     if domain is None:
         robots_data = fetch_robots(url)
-    else:
-        robots_data = domain[2]
+        add_domain(domain_name, robots_data, '')
+        domain = get_domain(domain_name)
+
+    site_id = domain[0]
+    robots_data = domain[2]
 
     # Parse robots.txt
     robots_parser = get_robots_parser(robots_data)
     delay = robots_parser.crawl_delay(USER_AGENT)
-
-    # Add to dataset if missing
-    if domain is None:
-        # TODO: add delay to domain entry
-        add_domain(domain_name, robots_data, '')
-
 
     if delay is not None:
         print('DELAY:', delay)
@@ -61,8 +58,8 @@ def add_to_frontier(url):
 
     cur = conn.cursor()
     try:
-        cur.execute("INSERT INTO crawldb.page (page_type_code, url)"
-                    " VALUES (%s,%s)", ('FRONTIER', url))
+        cur.execute("INSERT INTO crawldb.page (site_id, page_type_code, url)"
+                    f"VALUES ({site_id},'FRONTIER','{url}')")
     except psycopg2.errors.UniqueViolation:
         print(f"Site '{url}' is already in the database.")
 

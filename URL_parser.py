@@ -48,6 +48,19 @@ def group_split(seq, *filter_fns):
     groups = tuple([*filter_groups, rest_group])
     return groups
 
+def fetch_sitemap(url):
+    """ Reads sitemap url. """
+
+    sitemap_data = ''
+    try:
+        res = requests.get(url)
+        if res.status_code == 200:
+            sitemap_data = res.content.decode('utf-8')
+    except requests.RequestException:
+        print(f'WARNING: Could not read sitemap: {sitemap_data}')
+
+    return sitemap_data
+
 def fetch_robots(url):
     """ Reads robots file (if present) for the domain of the given url. If the robots.txt file is missing an empty string is returned. """
 

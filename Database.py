@@ -7,7 +7,6 @@ import hashlib
 import logging
 
 from URL_parser import get_domain_name, get_robots_parser, fetch_robots, fetch_sitemap
-from URL_parser import USER_AGENT, DEFAULT_CRAWL_DELAY
 
 import settings
 
@@ -21,11 +20,14 @@ class EmptyFrontierException(Exception):
 class FrontierNotAvailableException(Exception):
     pass
 
+def get_connection():
+    conn = psycopg2.connect(host=settings.DB_HOST, user=settings.DB_USERNAME, password=settings.DB_PASSWORD, dbname=settings.DB_DATABASE)
+    return conn
 
 def init_frontier():
     """ Init frontier on start. Add non-processed pages back to frontier. """
 
-    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
+    conn = get_connection()
     conn.autocommit = True
 
     cur = conn.cursor()
@@ -60,17 +62,17 @@ def add_to_frontier(url):
 
     # Parse robots.txt
     robots_parser = get_robots_parser(robots_data)
-    delay = robots_parser.crawl_delay(USER_AGENT)
+    delay = robots_parser.crawl_delay(settings.USER_AGENT)
 
     if delay is not None:
         logging.debug(f'DELAY: {delay}')
 
     # Check if URL can be crawled
-    if not robots_parser.can_fetch(url, USER_AGENT):
+    if not robots_parser.can_fetch(url, settings.USER_AGENT):
         logging.debug(f"FORBIDDEN: {url}")
         return False
 
-    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
+    conn = get_connection()
     conn.autocommit = True
 
     cur = conn.cursor()
@@ -90,7 +92,7 @@ def get_frontier():
     Pop function to get the front of the frontier.
     :return: The top element of the frontier
     """
-    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
+    conn = get_connection()
 
     cur = conn.cursor()
     query = ("SELECT page.id, page.url FROM crawldb.page "
@@ -148,7 +150,7 @@ def _page_exists(md5_string, conn):
 def page_content_binary(page_id, status, at):
     """ Updates page content (for binary files) """
 
-    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
+    conn = get_connection()
     conn.autocommit = True
 
     cur = conn.cursor()
@@ -174,7 +176,7 @@ def page_content(page_id, url, html, status, page_type, at):
     # Compute hash
     md5_string = hashlib.md5(html.encode('utf-8')).hexdigest()
 
-    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
+    conn = get_connection()
     conn.autocommit = True
 
     exists, duplicate_url = _page_exists(md5_string, conn)
@@ -205,8 +207,7 @@ def add_page_data(page, data, data_type):
     :param data_type:
     :return:
     """
-    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password,
-                            dbname=settings.db_database)
+    conn = get_connection()
     conn.autocommit = True
 
     cur = conn.cursor()
@@ -226,8 +227,7 @@ def add_image(page, filename, content_type, data, at):
     :param at:
     :return:
     """
-    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password,
-                            dbname=settings.db_database)
+    conn = get_connection()
     conn.autocommit = True
 
     cur = conn.cursor()
@@ -242,7 +242,7 @@ def add_image(page, filename, content_type, data, at):
 def update_domain(page_id, access_time):
     """ Updates domain's next allowed time. """
 
-    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
+    conn = get_connection()
     conn.autocommit = True
 
     cur = conn.cursor()
@@ -271,7 +271,7 @@ def get_domain(domain):
     :param domain:
     :return:
     """
-    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
+    conn = get_connection()
 
     cur = conn.cursor()
     cur.execute(f"SELECT id, domain, robots_content FROM crawldb.site WHERE domain='{domain}'")
@@ -295,16 +295,16 @@ def add_domain(domain_name, robots):
 
     # Get crawl delay
     robots_parser = get_robots_parser(robots)
-    crawl_delay = robots_parser.crawl_delay(USER_AGENT)
+    crawl_delay = robots_parser.crawl_delay(settings.USER_AGENT)
     if crawl_delay is None:
-        crawl_delay = DEFAULT_CRAWL_DELAY
+        crawl_delay = settings.DEFAULT_CRAWL_DELAY
 
     sitemaps = list(robots_parser.sitemaps)
     sitemap_content = ''
     if len(sitemaps) > 0:
         sitemap_content = fetch_sitemap(sitemaps[0])
 
-    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
+    conn = get_connection()
     conn.autocommit = True
 
     cur = conn.cursor()
@@ -317,8 +317,7 @@ def add_domain(domain_name, robots):
 
 
 def get_domain_last_visit(domain_id):
-    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password,
-                            dbname=settings.db_database)
+    conn = get_connection()
     conn.autocommit = True
 
     cur = conn.cursor()
@@ -341,7 +340,7 @@ def add_link(url_from, url_to):
     :param url_to:
     :return:
     """
-    conn = psycopg2.connect(host=settings.db_host, user=settings.db_username, password=settings.db_password, dbname=settings.db_database)
+    conn = get_connection()
     conn.autocommit = True
 
     cur = conn.cursor()

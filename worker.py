@@ -9,9 +9,9 @@ from URL_parser import URLParser
 from multiprocessing import Process
 
 import Database as db
+import settings
 
-url_re = re.compile(r'\.gov.si?/')
-
+url_re = re.compile(settings.VALID_URL_REGEX)
 
 class URLWorker(Process):
     """ Worker class. Retrieves and parses url and adds data to the dataset. """

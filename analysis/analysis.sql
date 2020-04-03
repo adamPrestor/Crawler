@@ -1,5 +1,5 @@
 -- Export pages (without HTML)
-SELECT page.id, page.site_id, page.page_type_code, page.url, page.html_content_hash, page.http_status_code, page.accessed_time, site.domain
+SELECT page.id, page.page_type_code, page.url, LENGTH(page.html_content), page.html_content_hash, page.http_status_code, page.accessed_time, site.domain
 FROM crawldb.page
 LEFT JOIN crawldb.site ON page.site_id = site.id
 

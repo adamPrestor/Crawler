@@ -27,7 +27,7 @@ python -m crawler.Crawler -n 6
 
 ## Database backup
 
-The database is big, therefore we include [an external link](#) to the backup file [1 GB].
+The database is big, therefore we include [an external link](https://we.tl/t-OnzJnFrQs5) to the backup file [1 GB].
 
 ## Report and analysis
 

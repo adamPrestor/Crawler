@@ -23,6 +23,10 @@ Optionally you can specify the number of workers by using the flag. Default numb
 python -m crawler.Crawler -n 6
 ```
 
+## Database backup
+
+The database is big, therefore we include [an external link](#) to the backup file [1 GB].
+
 ## Report and analysis
 
 The report is available [here](#).

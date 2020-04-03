@@ -1,6 +1,6 @@
 # Database credentials
-DB_USERNAME = 'user'
-DB_PASSWORD = 'SecretPassword'
+DB_USERNAME = 'username'
+DB_PASSWORD = 'password'
 DB_HOST = 'localhost'
 DB_DATABASE = 'postgres'
 

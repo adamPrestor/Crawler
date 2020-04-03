@@ -6,9 +6,8 @@ from datetime import datetime, timedelta
 import hashlib
 import logging
 
-from URL_parser import get_domain_name, get_robots_parser, fetch_robots, fetch_sitemap
-
-import settings
+from .URL_parser import get_domain_name, get_robots_parser, fetch_robots, fetch_sitemap
+from . import settings
 
 lock = threading.Lock()
 

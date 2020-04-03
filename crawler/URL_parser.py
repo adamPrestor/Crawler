@@ -11,7 +11,7 @@ import urltools
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-import settings
+from . import settings
 
 ParserResult = namedtuple('ParserResult', ['html_content', 'access_time',
                                            'image_links', 'binary_links', 'normal_links'])

@@ -7,12 +7,12 @@ import requests
 from datetime import datetime
 import traceback
 import logging
-
-from URL_parser import URLParser
 from multiprocessing import Process
 
-import Database as db
-import settings
+from .URL_parser import URLParser
+
+from . import Database as db
+from . import settings
 
 url_re = re.compile(settings.VALID_URL_REGEX)
 

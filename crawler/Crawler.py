@@ -7,9 +7,9 @@ import urllib.parse
 from urllib.parse import urlparse
 from multiprocessing import Queue, Lock
 
-import Database as db
-from worker import URLWorker
-import settings
+from . import Database  as db
+from .worker import URLWorker
+from . import settings
 
 
 def crawl(num_workers):

@@ -191,9 +191,10 @@ def page_content(page_id, url, html, status, page_type, at):
     else:
         # Mark as duplicate
         logging.warning(f"DUPLICATE: {url}, {duplicate_url}")
-        cur.execute(rf"""UPDATE crawldb.page
-                        SET page_type_code='DUPLICATE',http_status_code={status},accessed_time='{at}'
-                        WHERE id='{page_id}'""")
+        sql = """UPDATE crawldb.page
+                 SET page_type_code='DUPLICATE',http_status_code=%s,accessed_time=%s,html_content_hash=%s
+                 WHERE id=%s"""
+        cur.execute(sql, (status, at, md5_string, page_id))
 
     cur.close()
     conn.close()

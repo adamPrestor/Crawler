@@ -210,8 +210,11 @@ def add_page_data(page, data, data_type):
     conn = get_connection()
     conn.autocommit = True
 
-    cur = conn.cursor()
-    cur.execute(f"INSERT INTO crawldb.page_data (page_id, data_type_code, data) VALUES ({page},'{data_type}','{data}')")
+    try:
+        cur = conn.cursor()
+        cur.execute(f"INSERT INTO crawldb.page_data (page_id, data_type_code, data) VALUES ({page},'{data_type}','{data}')")
+    except psycopg2.errors.StringDataRightTruncation:
+        logging.warning(f"Url was too long to save into the database {data}")
 
     cur.close()
     conn.close()
@@ -231,9 +234,12 @@ def add_image(page, filename, content_type, data, at):
     conn.autocommit = True
 
     cur = conn.cursor()
-    query = f"""INSERT INTO crawldb.image (page_id, filename, content_type, data, accessed_time)
-                VALUES (%s,%s,%s,%s,%s)"""
-    cur.execute(query, (page, filename, content_type, data, at))
+    try:
+        query = f"""INSERT INTO crawldb.image (page_id, filename, content_type, data, accessed_time)
+                    VALUES (%s,%s,%s,%s,%s)"""
+        cur.execute(query, (page, filename, content_type, data, at))
+    except psycopg2.errors.StringDataRightTruncation:
+        logging.warning(f"Url was too long to save into the database {filename}")
 
     cur.close()
     conn.close()

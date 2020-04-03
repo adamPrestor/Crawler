@@ -32,6 +32,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    logging.basicConfig(filename='crawler.log', level=logging.NOTSET, format='%(levelname)s:%(asctime)s: %(message)s')
+    logging.basicConfig(filename='crawler.log', level=logging.WARNING, format='%(levelname)s:%(asctime)s: %(message)s')
     logging.critical("Crawler started.")
     crawl(args.num_workers)

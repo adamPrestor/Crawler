@@ -1,5 +1,8 @@
 import re
+import ssl
 import time
+
+import psycopg2
 import requests
 from datetime import datetime
 import traceback
@@ -23,8 +26,8 @@ class URLWorker(Process):
 
     def run(self):
         ran_out = False
-        while True:
-            with URLParser() as parser:
+        with URLParser() as parser:
+            while True:
                 # Reads urls from queue until it receives the sentinel value of None
                 try:
                     # get the frontier out of the DB - FIFO style
@@ -59,7 +62,10 @@ class URLWorker(Process):
                             # add image data from the page
                             for image in res.image_links:
                                 dtype = image.split('.')[-1].upper()
-                                db.add_image(page=page_id, filename=image, content_type=dtype, data=None,at=res.access_time)
+                                if len(dtype) > 10:
+                                    # if dtype is longer then 5 then we can assume it is not the extension
+                                    dtype = ''
+                                db.add_image(page=page_id, filename=image, content_type=dtype, data=None, at=res.access_time)
 
                             # Parse links and add to frontier
                             for link in res.normal_links:
@@ -85,10 +91,12 @@ class URLWorker(Process):
                     self.lock.release()
                     time.sleep(10)
                     if ran_out:
+                        logging.critical(f"Worker {self.id} has finished it's task. ---------------")
                         return
                     ran_out = True
+                except ssl.SSLError:
+                    logging.warning(f"Couldn't establish SSL connection to link {url}")
+                except psycopg2.errors.StringDataRightTruncation:
+                    logging.warning(f"Url was too long to save into the database {url}")
                 except Exception as e:
                     logging.warning("Error caught: " + str(e), exc_info=True)
-                    return
-
-        logging.critical(f"Worker {self.id} has finished it's task. ---------------")

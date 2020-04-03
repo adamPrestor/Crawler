@@ -1,6 +1,6 @@
 # Web Crawler
 
-Configurable and multi-threaded crawler that crawls `.gov.si` sites by default.
+Configurable and multi-threaded crawler that crawls `*.gov.si` sites by default.
 
 ## Setup
 

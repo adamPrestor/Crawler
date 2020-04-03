@@ -154,3 +154,4 @@ fabric.properties
 settings.py
 driver/
 /analysis/data/
+/analysis/figures/

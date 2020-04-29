@@ -5,7 +5,7 @@ def rtvslo(page):
     title_regex = r'<h1>(.+)</h1>'
     subtitle_regex = r'<div class="subtitle">(.+)</div>'
     lead_regex = r'<p class="lead">(.+)</p>'
-    content_regex = r'<article[^>]+>\s*([\s\S]+?)\s*</article>'
+    content_regex = r'<div class="article-body">\s*([\s\S]+?\s*</article>)'
     author_regex = r'<div class="author-name">(.+)</div>'
     date_regex = r'<div class="publish-meta">\s*(.*)\s*<br>'
 

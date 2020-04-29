@@ -22,6 +22,10 @@ input_dir = os.path.join(script_dir, '../input-extraction')
 input_dir = os.path.abspath(input_dir)
 
 for site in os.listdir(input_dir):
+    # Skip hidden files
+    if site.startswith('.'):
+        continue
+
     site_dir = os.path.join(input_dir, site)
 
     # Get HTML file paths

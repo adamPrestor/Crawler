@@ -150,8 +150,15 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+# Crawler
+
 .vscode/
 settings.py
 driver/
 /analysis/data/
 /analysis/figures/
+
+# Web extraction
+
+# Ignore page data (images, etc.)
+/input-extraction/*/*_files

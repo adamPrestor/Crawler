@@ -61,9 +61,48 @@ def overstock(page):
 
     return items
 
+def tmdb(page):
+    tree = html.fromstring(page)
+
+    title_xpath = r'//h2/a'
+    year_xpath = r'//span[@class="tag release_date"]'
+    certification_xpath = r'//span[@class="certification"]'
+    release_xpath = r'//span[@class="release"]'
+    genre_xpath = r'//span[@class="genres"]/a'
+    runtime_xpath = r'//span[@class="runtime"]'
+    rating_xpath = r'//div[@class="user_score_chart"]'
+    tagline_xpath = r'//h3[@class="tagline"]'
+    overview_xpath = r'//div[@class="overview"]/p'
+
+    name_xpath = r'//li[@class="profile"]/p/a'
+    role_xpath = r'//li[@class="profile"]/p[@class="character"]'
+
+    # Year out of paranthesis
+    year = re.search(r'\((.*?)\)', tree.xpath(year_xpath)[0].text).group(1)
+
+    names = [n.text.strip() for n in tree.xpath(name_xpath)]
+    roles = [r.text.strip() for r in tree.xpath(role_xpath)]
+
+    data = {
+        'title': tree.xpath(title_xpath)[0].text.strip(),
+        'year': year,
+        'certification': tree.xpath(certification_xpath)[0].text.strip(),
+        'release': tree.xpath(release_xpath)[0].text.strip(),
+        'genres': [res.text.strip() for res in tree.xpath(genre_xpath)],
+        'runtime': tree.xpath(runtime_xpath)[0].text.strip(),
+        'rating': tree.xpath(rating_xpath)[0].get('data-percent'),
+        'tagline': tree.xpath(tagline_xpath)[0].text.strip(),
+        'overview': tree.xpath(overview_xpath)[0].text.strip(),
+        'people': [{'name': name, 'role': role}
+                   for name, role in zip(names, roles)]
+    }
+
+    return data
+
 site_methods = {
     'rtvslo.si': rtvslo,
     'overstock.com': overstock,
+    'themoviedb.org': tmdb,
 }
 
 def extract(site, pages):

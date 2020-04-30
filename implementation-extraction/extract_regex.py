@@ -50,9 +50,39 @@ def overstock(page):
 
     return items
 
+def tmdb(page):
+    title_regex = r'<div class="title[\S\s]+?>(.+)</a>'
+    year_regex = r'<span class="tag release_date">\((\d+)\)</span>'
+    certification_regex = r'<span class="certification">\s*(.+)\s*</span>'
+    release_regex = r'<span class="release">\s*(.+)\s*</span>'
+    genre_regex = r'<a href="/genre/.*?/movie">\s*(.*?)\s*</a>'
+    runtime_regex = r'<span class="runtime">\s*(.*?)\s*</span>'
+    rating_regex = r'data-percent="(.*?)"'
+    tagline_regex = r'<h3 class="tagline" dir="auto">\s*(.*?)\s*</h3>'
+    overview_regex = r'<div class="overview" dir="auto">\s*<p>\s*(.*)\s*</p>\s*</div>'
+    profile_regex = r'<li class="profile">[\s\S]*?<a href="/person/.*>(.*)</a>[\s\S]*?<p class="character">(.*)</p>'
+
+    data = {
+        'title': re.search(title_regex, page).group(1),
+        'year': re.search(year_regex, page).group(1),
+        'certification': re.search(certification_regex, page).group(1),
+        'release': re.search(release_regex, page).group(1),
+        'genres': [res.group(1) for res in re.finditer(genre_regex, page)],
+        'runtime': re.search(runtime_regex, page).group(1),
+        'rating': re.search(rating_regex, page).group(1),
+        'tagline': re.search(tagline_regex, page).group(1),
+        'overview': re.search(overview_regex, page).group(1),
+        'people': [{'name': res.group(1), 'role': res.group(2)}
+                   for res in re.finditer(profile_regex, page)]
+    }
+
+    return data
+
+
 site_methods = {
     'rtvslo.si': rtvslo,
     'overstock.com': overstock,
+    'themoviedb.org': tmdb,
 }
 
 def extract(site, pages):

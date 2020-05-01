@@ -19,7 +19,7 @@ def traverse(parent):
 
 
 def traverse_gt(parent):
-    print(f"{parent.tag} = TEXT: {parent.text}, OPTIONAL: {parent.optional}")
+    print(f"{parent.tag} = TEXT: {parent.text}, OPTIONAL: {parent.optional}, LIST: {parent.list}")
 
     for node in parent.children:
         traverse_gt(node)

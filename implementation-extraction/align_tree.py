@@ -20,7 +20,6 @@ class WeightTableElement:
 
 
 class AlignedTree:
-
     def __init__(self, t1: HtmlElement, t2: HtmlElement):
         self.t1 = t1
         self.t2 = t2
@@ -31,14 +30,12 @@ class AlignedTree:
 
     def alignment(self):
         tree = Tree(self.t1, self.t2)
-        # print(tree)
         if self.t1.tag == self.t2.tag:
             k = len(self.c1)
             n = len(self.c2)
 
             for i in range(k):
                 for j in range(n):
-                    # print(self.c1[i].tag, self.c2[j].tag)
                     temp = AlignedTree(self.c1[i], self.c2[j])
                     weight, subtree = temp.alignment()
                     self.w[i][j] = WeightTableElement(weight, subtree)
@@ -51,7 +48,6 @@ class AlignedTree:
             # assign children
             c = self.backtrack()
             tree.set_children(c)
-            # print(tree)
             return self.m[k][n].cost + 1, tree
         else:
             return 0, tree
@@ -80,12 +76,10 @@ class AlignedTree:
         while path:
             e = path.pop()
             d = list(np.subtract(e, p))
-            # print(e)
 
             if sum(d) == 2:
                 # you moved diagonally
                 # append the belonging tree into the children list
-                # print(f"ERROR: {self.w[e[0] - 1][e[1] - 1].tree}")
                 c.append(self.w[e[0] - 1][e[1] - 1].tree)
             else:
                 # print("HERE")

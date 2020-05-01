@@ -3,8 +3,9 @@
 * Regular expressions and XPath queries for data extraction from `rtvslo.si`, `overstock.com` and `themoviedb.org`.
 * Implementation of an automatic data extraction wrapper generator.
 
-## Setup
+The report is available [here](report-extraction.pdf).
 
+## Setup
 
 The for the project are `numpy` and `lxml`. They can be installed automatically using the `implementation-extraxtion/requirements.txt` file.
 

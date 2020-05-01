@@ -1,6 +1,7 @@
 import re
 import json
 from lxml import html, etree
+from lxml.html import clean
 
 def inner_html(node):
     return '\n'.join([etree.tostring(child, encoding='unicode') for child in node.iterchildren()])
@@ -15,11 +16,15 @@ def rtvslo(page):
     author_xpath = r'//div[@class="author-name"]'
     date_xpath = r'//div[@class="publish-meta"]'
 
+    # Clean up content
+    content = inner_html(tree.xpath(content_xpath)[0]).strip()
+    content = clean.clean_html(content).replace('\t', '')
+
     data = {
         'title': tree.xpath(title_xpath)[0].text.strip(),
         'subtitle': tree.xpath(subtitle_xpath)[0].text.strip(),
         'lead': tree.xpath(lead_xpath)[0].text.strip(),
-        'content': inner_html(tree.xpath(content_xpath)[0]).strip(),
+        'content': content,
         'author': tree.xpath(author_xpath)[0].text.strip(),
         'date': tree.xpath(date_xpath)[0].text.strip()
     }
@@ -106,6 +111,9 @@ site_methods = {
 }
 
 def extract(site, pages):
+    if site not in site_methods:
+        print(f'[REGEX] Extraction for site "{site}" not imlemented.')
+        return
 
     method = site_methods[site]
 

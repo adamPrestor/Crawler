@@ -1,5 +1,6 @@
 import re
 import json
+from lxml.html import clean
 
 def rtvslo(page):
     title_regex = r'<h1>(.+)</h1>'
@@ -13,7 +14,7 @@ def rtvslo(page):
         'title': re.search(title_regex, page).group(1),
         'subtitle': re.search(subtitle_regex, page).group(1),
         'lead': re.search(lead_regex, page).group(1),
-        'content': re.search(content_regex, page).group(1),
+        'content': clean.clean_html(re.search(content_regex, page).group(1).replace('\t', '')),
         'author': re.search(author_regex, page).group(1),
         'date': re.search(date_regex, page).group(1)
     }
@@ -86,6 +87,9 @@ site_methods = {
 }
 
 def extract(site, pages):
+    if site not in site_methods:
+        print(f'[REGEX] Extraction for site "{site}" not imlemented.')
+        return
 
     method = site_methods[site]
 

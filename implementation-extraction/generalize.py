@@ -1,4 +1,5 @@
 from lxml.html import HtmlElement
+import lxml.etree as etree
 
 from align_tree import AlignedTree
 
@@ -56,3 +57,19 @@ class GeneralizeTree:
             c = GeneralizeTree()
             c.build_from_html_element(child)
             self.children.append(c)
+
+    def get_element_tree(self):
+        root = etree.Element(self.tag)
+        if self.optional:
+            root.set('optional', 'optional')
+        if self.text:
+            root.set('text', 'text')
+
+        for child in self.children:
+            c = child.get_element_tree()
+            root.append(c)
+
+        return root
+
+    def get_wrapper(self):
+        return etree.tostring(self.get_element_tree(), pretty_print=True, encoding='unicode')

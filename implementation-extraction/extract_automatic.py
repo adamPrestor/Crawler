@@ -43,5 +43,6 @@ def extract(site, pages):
     gt.build_from_aligned_tree(al_tree)
 
     # traverse(al_tree)
-    traverse_gt(gt)
+    # traverse_gt(gt)
+    print(gt.get_wrapper())
 

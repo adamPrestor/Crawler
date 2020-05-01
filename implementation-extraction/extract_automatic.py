@@ -1,7 +1,5 @@
 from lxml import html
-from lxml.html import diff, clean
-
-import numpy as np
+from lxml.html import clean
 
 import align_tree
 import generalize

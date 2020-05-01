@@ -1,4 +1,5 @@
 from lxml.html import HtmlElement
+import lxml.etree as etree
 
 import numpy as np
 
@@ -87,7 +88,7 @@ class GeneralizeTree:
         self.tag = tree.t1.tag
         if tree.t2 is not None:
             # or the values of text and optional
-            self.optional = tree.t1.optional or tree.t2.optional
+            self.optional = tree.t1.optional and tree.t2.optional
             self.text = tree.t1.text or tree.t2.text
             self.list = tree.t1.list or tree.t2.list
         else:
@@ -105,6 +106,23 @@ class GeneralizeTree:
             c.build_from_tree(child)
             self.children.append(c)
 
+    def get_element_tree(self):
+        root = etree.Element(self.tag)
+        if self.optional:
+            root.set('optional', 'optional')
+        if self.text:
+            root.set('text', 'text')
+        if self.list:
+            root.set('list', 'list')
+
+        for child in self.children:
+            c = child.get_element_tree()
+            root.append(c)
+
+        return root
+
+    def get_wrapper(self):
+        return etree.tostring(self.get_element_tree(), pretty_print=True, encoding='unicode')
 
 class ATGeneralized:
 

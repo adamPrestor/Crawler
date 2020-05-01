@@ -44,5 +44,19 @@ def extract(site, pages):
 
     # traverse(al_tree)
     # traverse_gt(gt)
-    print(gt.get_wrapper())
+    print(gt.get_xml_wrapper())
+
+
+    # Extract XPaths
+    # type2chr = {
+    #     'text': 'T',
+    #     'list': 'L',
+    #     'optional': 'O'
+    # }
+
+    # for types, xpath in gt.get_xpaths():
+
+    #     type_chrs = ''.join(type2chr[t] for t in sorted(types))
+    #     print(f'{type_chrs:3}: {xpath}')
+
 

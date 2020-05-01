@@ -121,8 +121,31 @@ class GeneralizeTree:
 
         return root
 
-    def get_wrapper(self):
+    def get_xml_wrapper(self):
         return etree.tostring(self.get_element_tree(), pretty_print=True, encoding='unicode')
+
+    def get_xpaths(self):
+        tree = self.get_element_tree()
+        def _get_xpaths(node, path):
+
+            xpaths = []
+            # add node to path
+            path = path + '/' + node.tag
+
+            interest_attrs = {'text', 'optional', 'list'}
+            attrs = node.keys()
+            contained_attrs = list(interest_attrs.intersection(attrs))
+
+
+            if len(contained_attrs) > 0:
+                xpaths.append((contained_attrs, path))
+
+            for el in node:
+                xpaths += _get_xpaths(el, path)
+
+            return xpaths
+
+        return _get_xpaths(tree, '/')
 
 class ATGeneralized:
 

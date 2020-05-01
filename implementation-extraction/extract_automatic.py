@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 import align_tree
+import generalize
 
 
 def traverse(parent):
@@ -20,6 +21,13 @@ def traverse(parent):
             traverse(node)
 
 
+def traverse_gt(parent):
+    print(f"{parent.tag} = TEXT: {parent.text}, OPTIONAL: {parent.optional}")
+
+    for node in parent.children:
+        traverse_gt(node)
+
+
 def extract(site, pages):
     print(f'AUTO: {site}, {pages}')
     htmls = []
@@ -32,6 +40,11 @@ def extract(site, pages):
 
     atree = align_tree.AlignedTree(trees[0], trees[1])
     _, al_tree = atree.alignment()
-    print(al_tree.t1.tag)
-    traverse(al_tree)
+    # print(al_tree.t1.tag)
+
+    gt = generalize.GeneralizeTree()
+    gt.build_from_aligned_tree(al_tree)
+
+    # traverse(al_tree)
+    traverse_gt(gt)
 

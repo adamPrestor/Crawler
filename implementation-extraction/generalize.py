@@ -15,27 +15,44 @@ class GeneralizeTree:
     def build_from_aligned_tree(self, al_tree: AlignedTree):
 
         self.tag = al_tree.t1.tag
-        children = []
+        self.children = []
 
         if al_tree.t2 is None:
             # this means there was no alignment for this node
             # ergo we have to build the rest of the subtree from html element
             self.optional = True
+
+            # if text exist then we can assume it is important
+            if al_tree.t1.text is not None and str(al_tree.t1.text).strip():
+                self.text = True
+
             for t1_child in al_tree.t1.getchildren():
                 c = GeneralizeTree()
                 c.build_from_html_element(t1_child)
-                children.append(c)
+                self.children.append(c)
         else:
             # we got ourselves an aligned node
             # what you want to do now is to check if the text is matching - if any and
             # build the rest of the children from the children of the node
 
-            # TODO: check the text equivalence
+            text1 = str(al_tree.t1.text).strip() if al_tree.t1.text is not None else '-'
+            text2 = str(al_tree.t2.text).strip() if al_tree.t2.text is not None else '-'
 
-            # TODO: generate children
+            if not text1 == text2:
+                self.text = True
+
             for al_child in al_tree.children:
-
-            pass
+                c = GeneralizeTree()
+                c.build_from_aligned_tree(al_child)
+                self.children.append(c)
 
     def build_from_html_element(self, element: HtmlElement):
-        pass
+        self.tag = element.tag
+
+        if element.text is not None and str(element.text).strip():
+            self.text = True
+
+        for child in element.getchildren():
+            c = GeneralizeTree()
+            c.build_from_html_element(child)
+            self.children.append(c)

@@ -38,7 +38,7 @@ class AlignedTree:
 
             for i in range(k):
                 for j in range(n):
-                    print(self.c1[i].tag, self.c2[j].tag)
+                    # print(self.c1[i].tag, self.c2[j].tag)
                     temp = AlignedTree(self.c1[i], self.c2[j])
                     weight, subtree = temp.alignment()
                     self.w[i][j] = WeightTableElement(weight, subtree)

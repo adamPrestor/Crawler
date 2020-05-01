@@ -2,7 +2,6 @@ from lxml import html
 from lxml.html import diff, clean
 
 import numpy as np
-import pandas as pd
 
 import align_tree
 import generalize

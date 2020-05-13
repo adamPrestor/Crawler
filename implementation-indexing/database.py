@@ -1,11 +1,22 @@
+from pathlib import Path
 import sqlite3
 
-DB_NAME = 'inverted_index.db'
+DB_PATH = str(Path(__file__).parent / 'inverted-index.db')
+CREATE_SCRIPT = str(Path(__file__).parent / 'create.sql')
+
+def create_database():
+    with open(CREATE_SCRIPT) as file:
+        script = file.read()
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.executescript(script)
+    conn.close()
+
 
 def insert_index(document, word_list, frequencies, indexes):
     """ Inserts inverted index entries for a single document. """
 
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
     # Insert new words into word list
@@ -25,4 +36,3 @@ def insert_index(document, word_list, frequencies, indexes):
 
     conn.commit()
     conn.close()
-

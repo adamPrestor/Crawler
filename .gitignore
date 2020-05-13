@@ -163,3 +163,5 @@ driver/
 
 # Ignore page data (images, etc.)
 /input-extraction/*/*_files
+
+/implementation-indexing/data/

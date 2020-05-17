@@ -36,3 +36,45 @@ def insert_index(document, word_list, frequencies, indexes):
 
     conn.commit()
     conn.close()
+
+
+def get_all_documents():
+    """ Return the names of all documents in db """
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    # get all documents from the db
+    document_query = "SELECT DISTINCT documentName FROM Posting"
+    cur.execute(document_query)
+
+    documents = cur.fetchall()
+
+    conn.commit()
+    conn.close()
+
+    return documents
+
+
+def get_frequency_and_position(query_words, document):
+    """ Return a frequency of the given word in the given document """
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    parameters = tuple(list(document) + query_words)
+    query = f"SELECT frequency, indexes FROM Posting WHERE documentName=? AND word IN ({','.join(['?']*len(query_words))})"
+    cur.execute(query, parameters)
+
+    output = cur.fetchall()
+
+    conn.commit()
+    conn.close()
+
+    frequnecies = 0
+    pos = []
+    if output:
+        # print(f"{document} has some: {output[0][0]}")
+        for (freq, positions) in output:
+            frequnecies += freq
+            pos += map(int, positions.split(','))
+
+    return frequnecies, sorted(pos)

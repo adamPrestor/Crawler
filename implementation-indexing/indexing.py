@@ -19,6 +19,7 @@ def index_page(html_data):
     # Get only text from page and preprocess it
     text = soup.get_text(separator=' ')
     tokens = preprocessing.preprocess(text)
+    raw_tokens = preprocessing.preprocess(text, keep_stop_words=True)
 
     # Unique words
     word_list = set(tokens)
@@ -26,10 +27,10 @@ def index_page(html_data):
     # Get frequencies and indices
     frequencies = {word: 0 for word in word_list}
     indexes = {word: [] for word in word_list}
-    for i, word in enumerate(tokens):
-        frequencies[word] += 1
-        indexes[word].append(i)
-
+    for i, word in enumerate(raw_tokens):
+        if word in word_list:
+            frequencies[word] += 1
+            indexes[word].append(i)
 
     return word_list, frequencies, indexes
 

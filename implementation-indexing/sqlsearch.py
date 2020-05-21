@@ -18,7 +18,7 @@ def output_string(raw_query, time_elapsed, outputs):
     right_col = 70
 
     string = f'Results for a query: \"{raw_query}\"\n\n' \
-             f'\tResults found in {time_elapsed:.2f}ms\n\n' \
+             f'\tResults found in {time_elapsed:.2f}s\n\n' \
              f'\t{"Frequencies".ljust(left_col)} {"Document".ljust(mid_col)} {"Snippet".ljust(right_col)}\n' \
              f'\t{"-"*left_col} {"-"*mid_col} {"-"*right_col}\n'
 

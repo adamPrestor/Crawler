@@ -55,4 +55,6 @@ if __name__ == '__main__':
     dirname = Path(__file__).parent
     data_dir = dirname / 'data'
 
+    db.create_database()
+
     process_pages(data_dir)

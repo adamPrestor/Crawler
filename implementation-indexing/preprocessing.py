@@ -10,7 +10,7 @@ class Preprocessing:
         self.lemmatizer = Lemmatizer(dictionary=lemmagen.DICTIONARY_SLOVENE)
         self.punc_regex = re.compile(r'^[^0-9a-zA-Z]+$')
 
-    def preprocess(self, text, raw=False, keep_stop_words=True):
+    def preprocess(self, text, raw=False, keep_stop_words=False):
         # Tokenize
         tokens = word_tokenize(text)
 

@@ -14,3 +14,10 @@ Configurable and multi-threaded crawler that crawls `*.gov.si` sites by default.
 * Implementation of an automatic data extraction wrapper generator.
 
 [Details and instructions](extraction.md)
+
+## Data indexing
+
+* HTML webpages inverted index generation
+* Data retrieval using queries
+
+[Details and instructions](indexing.md)

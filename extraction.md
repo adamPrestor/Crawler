@@ -7,10 +7,10 @@ The report is available [here](report-extraction.pdf).
 
 ## Setup
 
-The for the project are `numpy` and `lxml`. They can be installed automatically using the `implementation-extraxtion/requirements.txt` file.
+The dependencies for the project are `numpy` and `lxml`. They can be installed automatically using the `implementation-extraction/requirements.txt` file.
 
 ```bash
-pip install -r implementation-extraxtion/requirements.txt
+pip install -r implementation-extraction/requirements.txt
 
 # OR
 pip install numpy lxml

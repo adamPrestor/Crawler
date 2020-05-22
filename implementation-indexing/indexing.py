@@ -55,6 +55,9 @@ if __name__ == '__main__':
     dirname = Path(__file__).parent
     data_dir = dirname / 'data'
 
+    # Remove existing database
+    if os.path.exists(db.DB_PATH):
+        os.remove(db.DB_PATH)
     db.create_database()
 
     process_pages(data_dir)
